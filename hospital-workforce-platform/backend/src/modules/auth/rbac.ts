@@ -11,7 +11,8 @@ export const ROLES = [
   "HOSPITAL_ADMIN",
   "NURSING_MANAGER",
   "SHIFT_SUPERVISOR",
-  "DEPARTMENT_HEAD",
+  "DEPARTMENT_HEAD", "DEPARTMENT_MANAGER",
+  "DEPARTMENT_MANAGER",
 ] as const;
 export type Role = (typeof ROLES)[number];
 
@@ -23,7 +24,7 @@ export const PERMISSIONS = {
   // Employee management
   "employees:read": [
     "ADMIN", "HR_MANAGER", "COMPLIANCE_OFFICER",
-    "HOSPITAL_ADMIN", "NURSING_MANAGER", "SHIFT_SUPERVISOR", "DEPARTMENT_HEAD",
+    "HOSPITAL_ADMIN", "NURSING_MANAGER", "SHIFT_SUPERVISOR", "DEPARTMENT_HEAD", "DEPARTMENT_MANAGER",
   ],
   "employees:read:self": ["EMPLOYEE"],
   "employees:write": ["ADMIN", "HR_MANAGER", "HOSPITAL_ADMIN"],
@@ -33,7 +34,7 @@ export const PERMISSIONS = {
   // Credential management
   "credentials:read": [
     "ADMIN", "HR_MANAGER", "COMPLIANCE_OFFICER",
-    "HOSPITAL_ADMIN", "NURSING_MANAGER", "SHIFT_SUPERVISOR", "DEPARTMENT_HEAD",
+    "HOSPITAL_ADMIN", "NURSING_MANAGER", "SHIFT_SUPERVISOR", "DEPARTMENT_HEAD", "DEPARTMENT_MANAGER",
   ],
   "credentials:write": ["ADMIN", "HR_MANAGER", "COMPLIANCE_OFFICER"],
   "credentials:submit:self": ["EMPLOYEE"],
@@ -46,20 +47,20 @@ export const PERMISSIONS = {
   // Compliance
   "compliance:read": [
     "ADMIN", "HR_MANAGER", "COMPLIANCE_OFFICER",
-    "HOSPITAL_ADMIN", "NURSING_MANAGER", "SHIFT_SUPERVISOR", "DEPARTMENT_HEAD",
+    "HOSPITAL_ADMIN", "NURSING_MANAGER", "SHIFT_SUPERVISOR", "DEPARTMENT_HEAD", "DEPARTMENT_MANAGER",
   ],
 
   // Phase 2: Shift management
   "shifts:read": [
     "ADMIN", "HOSPITAL_ADMIN", "NURSING_MANAGER",
-    "SHIFT_SUPERVISOR", "DEPARTMENT_HEAD", "HR_MANAGER", "COMPLIANCE_OFFICER",
+    "SHIFT_SUPERVISOR", "DEPARTMENT_HEAD", "DEPARTMENT_MANAGER", "HR_MANAGER", "COMPLIANCE_OFFICER",
   ],
   "shifts:write": [
     "ADMIN", "HOSPITAL_ADMIN", "NURSING_MANAGER",
-    "SHIFT_SUPERVISOR", "DEPARTMENT_HEAD",
+    "SHIFT_SUPERVISOR", "DEPARTMENT_HEAD", "DEPARTMENT_MANAGER",
   ],
   "shifts:approve": [
-    "ADMIN", "HOSPITAL_ADMIN", "NURSING_MANAGER", "DEPARTMENT_HEAD",
+    "ADMIN", "HOSPITAL_ADMIN", "NURSING_MANAGER", "DEPARTMENT_HEAD", "DEPARTMENT_MANAGER",
   ],
   "shifts:delete": [
     "ADMIN", "HOSPITAL_ADMIN", "NURSING_MANAGER",
@@ -68,7 +69,7 @@ export const PERMISSIONS = {
   // Phase 2: Assignment & Roster
   "assignments:write": [
     "ADMIN", "HOSPITAL_ADMIN", "NURSING_MANAGER",
-    "SHIFT_SUPERVISOR", "DEPARTMENT_HEAD",
+    "SHIFT_SUPERVISOR", "DEPARTMENT_HEAD", "DEPARTMENT_MANAGER",
   ],
   "assignments:read:self": ["EMPLOYEE"],
 
@@ -77,13 +78,13 @@ export const PERMISSIONS = {
   "availability:write:self": ["EMPLOYEE"],
   "availability:read": [
     "ADMIN", "HOSPITAL_ADMIN", "NURSING_MANAGER",
-    "SHIFT_SUPERVISOR", "DEPARTMENT_HEAD", "HR_MANAGER",
+    "SHIFT_SUPERVISOR", "DEPARTMENT_HEAD", "DEPARTMENT_MANAGER", "HR_MANAGER",
   ],
 
   // Phase 2: Supervisor dashboard
   "supervisor:read": [
     "ADMIN", "HOSPITAL_ADMIN", "NURSING_MANAGER",
-    "SHIFT_SUPERVISOR", "DEPARTMENT_HEAD",
+    "SHIFT_SUPERVISOR", "DEPARTMENT_HEAD", "DEPARTMENT_MANAGER",
   ],
 } as const satisfies Record<string, readonly Role[]>;
 

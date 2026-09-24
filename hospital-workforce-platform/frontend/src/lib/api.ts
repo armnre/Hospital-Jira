@@ -132,6 +132,7 @@ export const api = {
   createShiftTemplate: (body: any) => apiFetch<import("./types").ShiftTemplate>("/shift-templates", { method: "POST", body }),
 
   supervisorDashboard: (date?: string) => apiFetch<import("./types").SupervisorDashboardData>("/supervisor/dashboard", { query: { date } }),
+  coverageDashboard: (date?: string) => apiFetch<import("./types").SupervisorDashboardData>("/coverage/dashboard", { query: { date } }),
 
   setAvailability: (body: { employeeId: string; date?: string; jalaliDate?: string; available: boolean; reason?: string; notes?: string }) =>
     apiFetch<import("./types").EmployeeAvailability>("/availability", { method: "POST", body }),

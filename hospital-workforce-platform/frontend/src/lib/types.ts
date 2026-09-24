@@ -122,9 +122,9 @@ export type ExpiringResponse = {
 // =============================================================================
 
 export type ShiftType = "MORNING" | "AFTERNOON" | "NIGHT" | "ON_CALL" | "EMERGENCY";
-export type ShiftStatus = "DRAFT" | "PENDING_APPROVAL" | "APPROVED" | "RUNNING" | "COMPLETED" | "CANCELLED";
+export type ShiftStatus = "DRAFT" | "PENDING_APPROVAL" | "APPROVED" | "ACTIVE" | "RUNNING" | "COMPLETED" | "CANCELLED";
 export type AssignmentStatus = "PROPOSED" | "PENDING_CONFIRMATION" | "CONFIRMED" | "REJECTED" | "CANCELLED";
-export type AvailabilityReason = "AVAILABLE" | "UNAVAILABLE" | "VACATION" | "MEDICAL_LEAVE" | "TRAINING";
+export type AvailabilityReason = "AVAILABLE" | "UNAVAILABLE" | "VACATION" | "SICK_LEAVE" | "MEDICAL_LEAVE" | "TRAINING";
 
 export type ShiftTemplate = {
   id: number;
