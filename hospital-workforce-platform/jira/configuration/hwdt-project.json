@@ -1,0 +1,169 @@
+{
+  "$comment": "HWDT Jira configuration-as-code. Consumed by scripts/provision/provision_jira.py and the Phase 0 Control Center.",
+  "version": "1.0.0",
+  "project": {
+    "key": "HWDT",
+    "name": "Hospital Workforce Digital Twin",
+    "description": "Hospital Workforce Digital Twin Platform — employee digital profiles, credentials, licence expiry, shifts, AI workforce matching and dashboards.",
+    "projectTypeKey": "software",
+    "projectTemplateKey": "com.pyxis.greenhopper.jira:gh-scrum-template",
+    "assigneeType": "UNASSIGNED",
+    "components": [
+      { "name": "Infrastructure", "description": "Containers, CI/CD, environments" },
+      { "name": "Backend", "description": "Services and APIs" },
+      { "name": "Frontend", "description": "Web UI" },
+      { "name": "Data", "description": "Database, data model, migrations" },
+      { "name": "AI", "description": "Matching models and AI services" },
+      { "name": "Integration", "description": "HIS/HR/external systems" }
+    ]
+  },
+  "issueTypes": [
+    { "name": "Epic", "type": "standard", "builtIn": true, "description": "Large body of work grouping stories across releases.", "workflow": "HWDT Delivery Workflow" },
+    { "name": "Story", "type": "standard", "builtIn": true, "description": "User-facing functionality expressed from a user's perspective.", "workflow": "HWDT Delivery Workflow" },
+    { "name": "Task", "type": "standard", "builtIn": true, "description": "Technical or organisational work item.", "workflow": "HWDT Delivery Workflow" },
+    { "name": "Bug", "type": "standard", "builtIn": true, "description": "Defect in delivered functionality.", "workflow": "HWDT Bug Workflow" },
+    { "name": "Test Case", "type": "standard", "builtIn": false, "description": "Documented test scenario with steps, expected result and Test Result.", "workflow": "HWDT Delivery Workflow" },
+    { "name": "Change Request", "type": "standard", "builtIn": false, "description": "Formal request to change agreed scope, design or configuration.", "workflow": "HWDT Delivery Workflow" },
+    { "name": "Incident", "type": "standard", "builtIn": false, "description": "Unplanned interruption or degradation of a service/environment.", "workflow": "HWDT Bug Workflow" },
+    { "name": "Infrastructure Task", "type": "standard", "builtIn": false, "description": "Platform, DevOps, environment or tooling work.", "workflow": "HWDT Delivery Workflow" }
+  ],
+  "customFields": [
+    {
+      "name": "Module",
+      "type": "com.atlassian.jira.plugin.system.customfieldtypes:select",
+      "searcherKey": "com.atlassian.jira.plugin.system.customfieldtypes:multiselectsearcher",
+      "description": "Platform module the issue belongs to.",
+      "options": ["Infrastructure", "Employee Digital Profile", "Credential Management", "Shift Management", "Workforce Matching Engine", "Dashboard & Reporting", "AI Layer", "External Integration"],
+      "issueTypes": "all"
+    },
+    {
+      "name": "Environment",
+      "type": "com.atlassian.jira.plugin.system.customfieldtypes:select",
+      "searcherKey": "com.atlassian.jira.plugin.system.customfieldtypes:multiselectsearcher",
+      "description": "Target/affected deployment environment. Replaces the free-text system 'Environment' field (hidden in the HWDT field configuration).",
+      "options": ["Local", "Development", "Test", "UAT", "Production"],
+      "issueTypes": "all"
+    },
+    {
+      "name": "Release Version",
+      "type": "com.atlassian.jira.plugin.system.customfieldtypes:version",
+      "searcherKey": "com.atlassian.jira.plugin.system.customfieldtypes:versionsearcher",
+      "description": "Planned release in which the change ships (project versions, e.g. R0.1-Foundation).",
+      "options": [],
+      "issueTypes": "all"
+    },
+    {
+      "name": "Priority Level",
+      "type": "com.atlassian.jira.plugin.system.customfieldtypes:select",
+      "searcherKey": "com.atlassian.jira.plugin.system.customfieldtypes:multiselectsearcher",
+      "description": "Clinical/business impact based priority (independent from the system Priority).",
+      "options": ["P1 - Critical", "P2 - High", "P3 - Medium", "P4 - Low"],
+      "issueTypes": "all"
+    },
+    {
+      "name": "Test Result",
+      "type": "com.atlassian.jira.plugin.system.customfieldtypes:select",
+      "searcherKey": "com.atlassian.jira.plugin.system.customfieldtypes:multiselectsearcher",
+      "description": "Outcome of the latest test execution.",
+      "options": ["Not Run", "Passed", "Passed with Remarks", "Failed", "Blocked"],
+      "issueTypes": ["Test Case", "Bug", "Story"]
+    },
+    {
+      "name": "Department",
+      "type": "com.atlassian.jira.plugin.system.customfieldtypes:select",
+      "searcherKey": "com.atlassian.jira.plugin.system.customfieldtypes:multiselectsearcher",
+      "description": "Hospital department impacted or requesting the change.",
+      "options": ["Nursing", "Emergency", "Intensive Care", "Surgery", "Radiology", "Laboratory", "Pharmacy", "Human Resources", "IT", "Administration"],
+      "issueTypes": "all"
+    },
+    {
+      "name": "Employee ID",
+      "type": "com.atlassian.jira.plugin.system.customfieldtypes:textfield",
+      "searcherKey": "com.atlassian.jira.plugin.system.customfieldtypes:textsearcher",
+      "description": "Hospital employee identifier (format EMP-000000) — reference only, never store personal data in Jira.",
+      "options": [],
+      "issueTypes": ["Bug", "Incident", "Change Request"]
+    }
+  ],
+  "versions": [
+    { "name": "R0.1-Foundation", "description": "Phase 0 — technical foundation" },
+    { "name": "R1.0-MVP", "description": "Phase 1 — profiles & credentials MVP" }
+  ],
+  "workflows": [
+    {
+      "name": "HWDT Delivery Workflow",
+      "description": "Standard delivery lifecycle for Epics, Stories, Tasks, Test Cases, Change Requests and Infrastructure Tasks.",
+      "statuses": [
+        { "name": "BACKLOG", "category": "To Do" },
+        { "name": "ANALYSIS", "category": "In Progress" },
+        { "name": "READY FOR DEVELOPMENT", "category": "To Do" },
+        { "name": "DEVELOPMENT", "category": "In Progress" },
+        { "name": "CODE REVIEW", "category": "In Progress" },
+        { "name": "QA TEST", "category": "In Progress" },
+        { "name": "UAT", "category": "In Progress" },
+        { "name": "DONE", "category": "Done" }
+      ],
+      "transitions": [
+        { "name": "Start Analysis", "from": "BACKLOG", "to": "ANALYSIS" },
+        { "name": "Analysis Complete", "from": "ANALYSIS", "to": "READY FOR DEVELOPMENT" },
+        { "name": "Start Development", "from": "READY FOR DEVELOPMENT", "to": "DEVELOPMENT" },
+        { "name": "Submit for Review", "from": "DEVELOPMENT", "to": "CODE REVIEW" },
+        { "name": "Review Approved", "from": "CODE REVIEW", "to": "QA TEST" },
+        { "name": "QA Passed", "from": "QA TEST", "to": "UAT" },
+        { "name": "UAT Accepted", "from": "UAT", "to": "DONE", "resolution": true },
+        { "name": "Changes Requested", "from": "CODE REVIEW", "to": "DEVELOPMENT", "backward": true },
+        { "name": "QA Failed", "from": "QA TEST", "to": "DEVELOPMENT", "backward": true },
+        { "name": "UAT Rejected", "from": "UAT", "to": "DEVELOPMENT", "backward": true },
+        { "name": "Needs Clarification", "from": "READY FOR DEVELOPMENT", "to": "ANALYSIS", "backward": true },
+        { "name": "Return to Backlog", "from": "ANALYSIS", "to": "BACKLOG", "backward": true },
+        { "name": "Reopen", "from": "DONE", "to": "BACKLOG", "backward": true, "clearResolution": true }
+      ]
+    },
+    {
+      "name": "HWDT Bug Workflow",
+      "description": "Defect and incident lifecycle.",
+      "statuses": [
+        { "name": "OPEN", "category": "To Do" },
+        { "name": "ANALYSIS", "category": "In Progress" },
+        { "name": "FIXING", "category": "In Progress" },
+        { "name": "TESTING", "category": "In Progress" },
+        { "name": "CLOSED", "category": "Done" }
+      ],
+      "transitions": [
+        { "name": "Start Analysis", "from": "OPEN", "to": "ANALYSIS" },
+        { "name": "Start Fixing", "from": "ANALYSIS", "to": "FIXING" },
+        { "name": "Ready for Test", "from": "FIXING", "to": "TESTING" },
+        { "name": "Verified & Close", "from": "TESTING", "to": "CLOSED", "resolution": true },
+        { "name": "Test Failed", "from": "TESTING", "to": "FIXING", "backward": true },
+        { "name": "Cannot Reproduce / Reject", "from": "ANALYSIS", "to": "CLOSED", "resolution": true },
+        { "name": "Reopen", "from": "CLOSED", "to": "OPEN", "backward": true, "clearResolution": true }
+      ]
+    }
+  ],
+  "workflowScheme": {
+    "name": "HWDT Workflow Scheme",
+    "defaultWorkflow": "HWDT Delivery Workflow",
+    "mappings": { "Bug": "HWDT Bug Workflow", "Incident": "HWDT Bug Workflow" }
+  },
+  "permissionScheme": {
+    "name": "HWDT Permission Scheme",
+    "groups": ["hwdt-admins", "hwdt-developers", "hwdt-qa", "hwdt-analysts", "hwdt-viewers"],
+    "roles": [
+      { "role": "Administrators", "group": "hwdt-admins", "permissions": ["ADMINISTER_PROJECTS", "BROWSE_PROJECTS", "CREATE_ISSUES", "EDIT_ISSUES", "DELETE_ISSUES", "TRANSITION_ISSUES", "ASSIGN_ISSUES", "ASSIGNABLE_USER", "RESOLVE_ISSUES", "CLOSE_ISSUES", "MANAGE_SPRINTS_PERMISSION", "ADD_COMMENTS", "DELETE_ALL_COMMENTS", "CREATE_ATTACHMENTS", "DELETE_ALL_ATTACHMENTS", "WORK_ON_ISSUES", "LINK_ISSUES"] },
+      { "role": "Developers", "group": "hwdt-developers", "permissions": ["BROWSE_PROJECTS", "CREATE_ISSUES", "EDIT_ISSUES", "TRANSITION_ISSUES", "ASSIGN_ISSUES", "ASSIGNABLE_USER", "RESOLVE_ISSUES", "ADD_COMMENTS", "CREATE_ATTACHMENTS", "WORK_ON_ISSUES", "LINK_ISSUES", "VIEW_DEV_TOOLS"] },
+      { "role": "QA Engineers", "group": "hwdt-qa", "permissions": ["BROWSE_PROJECTS", "CREATE_ISSUES", "EDIT_ISSUES", "TRANSITION_ISSUES", "ASSIGNABLE_USER", "RESOLVE_ISSUES", "CLOSE_ISSUES", "ADD_COMMENTS", "CREATE_ATTACHMENTS", "LINK_ISSUES"] },
+      { "role": "Business Analysts", "group": "hwdt-analysts", "permissions": ["BROWSE_PROJECTS", "CREATE_ISSUES", "EDIT_ISSUES", "TRANSITION_ISSUES", "ASSIGNABLE_USER", "ADD_COMMENTS", "CREATE_ATTACHMENTS", "LINK_ISSUES"] },
+      { "role": "Viewers", "group": "hwdt-viewers", "permissions": ["BROWSE_PROJECTS", "ADD_COMMENTS"] }
+    ]
+  },
+  "epics": [
+    { "ref": "EPIC-001", "name": "Infrastructure Foundation", "module": "Infrastructure", "description": "Containerised Jira, Confluence, PostgreSQL, reverse proxy, backups and monitoring (Phase 0)." },
+    { "ref": "EPIC-002", "name": "Employee Digital Profile", "module": "Employee Digital Profile", "description": "Unified digital profile per hospital employee (future phase)." },
+    { "ref": "EPIC-003", "name": "Credential Management", "module": "Credential Management", "description": "Professional credentials, licences and expiry tracking (future phase)." },
+    { "ref": "EPIC-004", "name": "Shift Management", "module": "Shift Management", "description": "Shift planning, rostering and coverage (future phase)." },
+    { "ref": "EPIC-005", "name": "Workforce Matching Engine", "module": "Workforce Matching Engine", "description": "Rule/AI based matching of staff to shifts and needs (future phase)." },
+    { "ref": "EPIC-006", "name": "Dashboard & Reporting", "module": "Dashboard & Reporting", "description": "Workforce dashboards and operational reports (future phase)." },
+    { "ref": "EPIC-007", "name": "AI Layer", "module": "AI Layer", "description": "Models, feature store and AI services (future phase)." },
+    { "ref": "EPIC-008", "name": "External Integration", "module": "External Integration", "description": "HIS, HR/payroll and regulator integrations (future phase)." }
+  ]
+}

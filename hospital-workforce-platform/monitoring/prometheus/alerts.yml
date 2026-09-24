@@ -1,0 +1,56 @@
+# HWDT — baseline alert rules (container status, CPU, memory, disk)
+groups:
+  - name: hwdt-containers
+    rules:
+      - alert: ContainerDown
+        expr: time() - container_last_seen{name=~"hwdt-(postgres|jira|confluence|nginx|backup|prometheus)"} > 60
+        for: 1m
+        labels: { severity: critical }
+        annotations:
+          summary: "Container {{ $labels.name }} is not running"
+
+      - alert: ContainerHighCpu
+        expr: sum by (name) (rate(container_cpu_usage_seconds_total{name=~"hwdt-.*"}[5m])) * 100 > 85
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: "{{ $labels.name }} CPU > 85% for 10 minutes ({{ $value | printf \"%.0f\" }}%)"
+
+      - alert: ContainerHighMemory
+        expr: (container_memory_working_set_bytes{name=~"hwdt-.*"} / on (name) (container_spec_memory_limit_bytes{name=~"hwdt-.*"} > 0)) * 100 > 90
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: "{{ $labels.name }} memory > 90% of limit"
+
+  - name: hwdt-host
+    rules:
+      - alert: HostHighCpu
+        expr: 100 - (avg(rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 85
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: "Host CPU usage > 85%"
+
+      - alert: HostLowMemory
+        expr: node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes * 100 < 10
+        for: 5m
+        labels: { severity: critical }
+        annotations:
+          summary: "Host available memory < 10%"
+
+      - alert: HostDiskSpaceLow
+        expr: (node_filesystem_avail_bytes{fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes{fstype!~"tmpfs|overlay"}) * 100 < 15
+        for: 5m
+        labels: { severity: critical }
+        annotations:
+          summary: "Disk {{ $labels.mountpoint }} has < 15% free space"
+
+  - name: hwdt-monitoring
+    rules:
+      - alert: ScrapeTargetDown
+        expr: up == 0
+        for: 2m
+        labels: { severity: warning }
+        annotations:
+          summary: "Prometheus target {{ $labels.job }} ({{ $labels.instance }}) is down"

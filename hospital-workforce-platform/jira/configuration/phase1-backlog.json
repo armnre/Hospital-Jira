@@ -1,0 +1,117 @@
+{
+  "$comment": "HWDT Phase 1 backlog-as-code. Applied by scripts/provision/provision_jira_backlog.py (idempotent via label hwdt-ref-<ref>). Keys are deterministic on a fresh project: EPIC-001..008 = HWDT-1..8 (provision_jira.py), then the items below in order = HWDT-9..20.",
+  "phase": "Phase 1: Employee Digital Twin + Credential Management Core",
+  "release": "R1.0-MVP",
+  "sprint": "HWDT Sprint 1",
+  "epics": [
+    { "ref": "EPIC-002", "key": "HWDT-2", "name": "Employee Digital Profile" },
+    { "ref": "EPIC-003", "key": "HWDT-3", "name": "Credential Management" }
+  ],
+  "items": [
+    {
+      "key": "HWDT-9", "ref": "P1-STORY-01", "type": "Story", "epic": "EPIC-002", "module": "Employee Digital Profile", "points": 8, "status": "DONE",
+      "summary": "Employee CRUD",
+      "description": "As an HR manager I can create, view, update and archive employee digital profiles so the workforce twin reflects the real hospital staff.",
+      "acceptanceCriteria": [
+        "GET/POST /employees, GET/PUT/DELETE /employees/{id} implemented with JWT auth",
+        "employee_number, email and national_id unique among active employees (409 on conflict)",
+        "Input validated server-side with field-level 422 errors",
+        "DELETE is a soft delete (deleted_at, status TERMINATED) with audit log entry",
+        "Search + filter by department, role and category, paginated"
+      ],
+      "deliverables": ["database/migrations/003_workforce_core.sql", "backend/src/modules/employees/"]
+    },
+    {
+      "key": "HWDT-10", "ref": "P1-STORY-02", "type": "Story", "epic": "EPIC-002", "module": "Employee Digital Profile", "points": 8, "status": "DONE",
+      "summary": "Employee Profile UI",
+      "description": "As HR staff I can browse employees and open a profile page showing personal information, department, role, skills and credentials.",
+      "acceptanceCriteria": [
+        "Employee list with search and filters (department, role, category, status)",
+        "Profile page: personal info, department, role, skills, credentials, compliance status",
+        "Create/edit forms with inline validation messages from the API",
+        "National ID masked for non-HR roles"
+      ],
+      "deliverables": ["frontend/src/views/EmployeeListView.tsx", "frontend/src/views/EmployeeProfileView.tsx", "frontend/src/views/EmployeeFormView.tsx"]
+    },
+    {
+      "key": "HWDT-11", "ref": "P1-STORY-03", "type": "Story", "epic": "EPIC-002", "module": "Employee Digital Profile", "points": 3, "status": "DONE",
+      "summary": "Department Management",
+      "description": "As an administrator I can maintain the list of hospital departments (ICU, Emergency, Surgery, Pediatrics, Administration…).",
+      "acceptanceCriteria": ["departments table seeded with reference data", "GET/POST/PUT/DELETE /departments", "Department in use cannot be deleted (409)", "UI to add and remove departments"],
+      "deliverables": ["database/migrations/005_reference_data.sql", "backend/src/modules/reference/", "frontend/src/views/ReferenceDataView.tsx"]
+    },
+    {
+      "key": "HWDT-12", "ref": "P1-STORY-04", "type": "Story", "epic": "EPIC-002", "module": "Employee Digital Profile", "points": 5, "status": "DONE",
+      "summary": "Skill Management",
+      "description": "As HR I can maintain a skills catalogue (ACLS, BLS, Dialysis, NICU Care…) and record each employee's skill level and years of experience. This is the foundation for the Phase 2 matching engine.",
+      "acceptanceCriteria": ["skills + employee_skills tables (level, years_experience)", "GET/POST/PUT/DELETE /skills", "POST/DELETE /employees/{id}/skills", "Skills visible and editable on the profile page"],
+      "deliverables": ["database/migrations/003_workforce_core.sql", "backend/src/modules/reference/", "backend/src/modules/employees/"]
+    },
+    {
+      "key": "HWDT-13", "ref": "P1-STORY-05", "type": "Story", "epic": "EPIC-003", "module": "Credential Management", "points": 8, "status": "DONE",
+      "summary": "Credential CRUD",
+      "description": "As a compliance officer I can record professional credentials (licences, registrations, certifications, training) for each employee.",
+      "acceptanceCriteria": [
+        "GET/POST /employees/{id}/credentials, PUT/DELETE /credentials/{id}",
+        "Rule 3: professional licences/registrations only for clinical employees (422 otherwise)",
+        "Issue date not in the future; expiry >= issue date",
+        "Material changes reset verification"
+      ],
+      "deliverables": ["database/migrations/004_credentials.sql", "backend/src/modules/credentials/"]
+    },
+    {
+      "key": "HWDT-14", "ref": "P1-STORY-06", "type": "Story", "epic": "EPIC-003", "module": "Credential Management", "points": 3, "status": "DONE",
+      "summary": "Credential Verification",
+      "description": "As a compliance officer I can verify a credential against the source document; the verifier and timestamp are recorded.",
+      "acceptanceCriteria": ["POST /credentials/{id}/verify restricted to ADMIN / COMPLIANCE_OFFICER", "verified_by + verified_at stored and shown in UI", "Expired credentials cannot be verified (Rule 2)", "Audit log entry CREDENTIAL_VERIFIED"],
+      "deliverables": ["backend/src/modules/credentials/credential.service.ts", "frontend/src/components/CredentialTable.tsx"]
+    },
+    {
+      "key": "HWDT-15", "ref": "P1-STORY-07", "type": "Story", "epic": "EPIC-003", "module": "Credential Management", "points": 5, "status": "DONE",
+      "summary": "Expiry Detection",
+      "description": "The system computes the credential status from today's date: VALID (> 60 days), EXPIRING_SOON (<= 60 days), EXPIRED (past expiry), PENDING_VERIFICATION (unverified).",
+      "acceptanceCriteria": [
+        "Rule 1 implemented identically in TypeScript (credential.rules.ts) and SQL (credential.compute_status)",
+        "Rule 2: EXPIRED overrides verification; isValid=false exposed in the API",
+        "GET /credentials/expiring returns 30- and 60-day buckets; GET /credentials/expired",
+        "Automated boundary tests (-3..+65 days) prove SQL == TypeScript"
+      ],
+      "deliverables": ["backend/src/modules/credentials/credential.rules.ts", "database/migrations/004_credentials.sql"]
+    },
+    {
+      "key": "HWDT-16", "ref": "P1-STORY-08", "type": "Story", "epic": "EPIC-003", "module": "Dashboard & Reporting", "points": 5, "status": "DONE",
+      "summary": "Compliance Dashboard",
+      "description": "As an HR manager I see total employees, clinical employees, active, expiring and expired credentials, plus non-compliant staff and upcoming expiries.",
+      "acceptanceCriteria": ["GET /dashboard/summary", "KPI cards: Total Employees, Clinical Employees, Active/Expiring/Expired Credentials", "Status distribution, per-department risk, upcoming expiries, non-compliant employees", "Credential management page with Expiring ≤30 / ≤60 / Expired / Pending tabs"],
+      "deliverables": ["backend/src/modules/compliance/", "frontend/src/views/DashboardView.tsx", "frontend/src/views/CredentialsView.tsx"]
+    },
+    {
+      "key": "HWDT-17", "ref": "P1-TASK-01", "type": "Infrastructure Task", "epic": "EPIC-001", "module": "Infrastructure", "points": 3, "status": "DONE",
+      "summary": "Phase 1 Docker integration (frontend + backend services)",
+      "description": "Add backend and frontend services to docker-compose, hwdt_db database/role, nginx vhost hwdt.local and backups for hwdt_db.",
+      "acceptanceCriteria": ["docker compose up -d starts frontend + backend with health checks", "Backend migrates on start", "hwdt.local routed by nginx (/api/v1 → backend)", "hwdt_db included in backups"],
+      "deliverables": ["docker-compose.yml", "backend/Dockerfile", "frontend/Dockerfile", "postgres/init/02-init-hwdt-app.sh", "nginx/config/conf.d/40-workforce.conf"]
+    },
+    {
+      "key": "HWDT-18", "ref": "P1-TASK-02", "type": "Task", "epic": "EPIC-003", "module": "Infrastructure", "points": 5, "status": "DONE",
+      "summary": "Phase 1 automated test suite",
+      "description": "Backend unit + integration tests (real PostgreSQL) and frontend component tests.",
+      "acceptanceCriteria": ["Employee creation/update tests", "Credential creation, expiry calculation and expired detection tests", "Employee list, profile page and credential status display tests", "All tests green"],
+      "deliverables": ["tests/backend/", "tests/frontend/"]
+    },
+    {
+      "key": "HWDT-19", "ref": "P1-TASK-03", "type": "Task", "epic": "EPIC-001", "module": "Infrastructure", "points": 2, "status": "DONE",
+      "summary": "Phase 1 documentation (Confluence)",
+      "description": "Phase 1 Architecture, Database Documentation, API Documentation and Business Rules pages.",
+      "acceptanceCriteria": ["4 pages in docs/ published to the HWDT Confluence space by the provisioner"],
+      "deliverables": ["docs/09-phase1-architecture.md", "docs/10-phase1-database.md", "docs/11-phase1-api.md", "docs/12-phase1-business-rules.md"]
+    },
+    {
+      "key": "HWDT-20", "ref": "P1-STORY-09", "type": "Story", "epic": "EPIC-002", "module": "Infrastructure", "points": 5, "status": "DONE",
+      "summary": "JWT Authentication & Role-Based Access",
+      "description": "Users sign in with email/password (scrypt hashes) and receive an expiring JWT; permissions are prepared for ADMIN, HR_MANAGER, COMPLIANCE_OFFICER and EMPLOYEE.",
+      "acceptanceCriteria": ["POST /auth/login, GET /auth/me", "JWT HS256 with exp/iss/aud; expired tokens rejected (401 TOKEN_EXPIRED)", "Permission matrix enforced on every route", "Login rate limiting; generic error messages"],
+      "deliverables": ["database/migrations/002_iam_users.sql", "backend/src/modules/auth/", "frontend/src/lib/auth.tsx", "frontend/src/views/LoginView.tsx"]
+    }
+  ]
+}

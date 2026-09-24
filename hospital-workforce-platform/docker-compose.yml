@@ -1,0 +1,384 @@
+# =============================================================================
+# Hospital Workforce Digital Twin Platform — PHASE 0 Infrastructure Foundation
+# -----------------------------------------------------------------------------
+# One-command start:   cp .env.example .env  &&  docker compose up -d
+# Provision Jira/Confluence content (after setup wizard / licence):
+#                      docker compose --profile provision run --rm provisioner
+# =============================================================================
+name: ${COMPOSE_PROJECT_NAME:-hwdt}
+
+x-default-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
+x-common: &common
+  restart: unless-stopped
+  logging: *default-logging
+  networks:
+    - hwdt_backend
+  environment: &common-env
+    TZ: ${TZ:-UTC}
+
+services:
+  # ---------------------------------------------------------------------------
+  # DATABASE LAYER — PostgreSQL 15 (jira_db + confluence_db)
+  # ---------------------------------------------------------------------------
+  postgres:
+    <<: *common
+    image: postgres:${POSTGRES_VERSION:-15}-bookworm
+    container_name: hwdt-postgres
+    environment:
+      <<: *common-env
+      POSTGRES_USER: ${POSTGRES_SUPERUSER:?POSTGRES_SUPERUSER is required}
+      POSTGRES_PASSWORD: ${POSTGRES_SUPERUSER_PASSWORD:?POSTGRES_SUPERUSER_PASSWORD is required}
+      POSTGRES_DB: postgres
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --data-checksums"
+      JIRA_DB_NAME: ${JIRA_DB_NAME:-jira_db}
+      JIRA_DB_USER: ${JIRA_DB_USER:-jira_user}
+      JIRA_DB_PASSWORD: ${JIRA_DB_PASSWORD:?JIRA_DB_PASSWORD is required}
+      CONFLUENCE_DB_NAME: ${CONFLUENCE_DB_NAME:-confluence_db}
+      CONFLUENCE_DB_USER: ${CONFLUENCE_DB_USER:-confluence_user}
+      CONFLUENCE_DB_PASSWORD: ${CONFLUENCE_DB_PASSWORD:?CONFLUENCE_DB_PASSWORD is required}
+      CONFLUENCE_DB_LOCALE: ${CONFLUENCE_DB_LOCALE:-en_US.UTF-8}
+      HWDT_DB_NAME: ${HWDT_DB_NAME:-hwdt_db}
+      HWDT_DB_USER: ${HWDT_DB_USER:-hwdt_app}
+      HWDT_DB_PASSWORD: ${HWDT_DB_PASSWORD:?HWDT_DB_PASSWORD is required}
+    command:
+      - postgres
+      - -c
+      - config_file=/etc/postgresql/postgresql.conf
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+      - ./postgres/config/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+      - ./postgres/backups:/backups
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d postgres && psql -U $${POSTGRES_USER} -d postgres -Atc 'select 1' >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    # Not published to the host by default (internal only). Uncomment for local DB tools:
+    # ports:
+    #   - "127.0.0.1:5432:5432"
+
+  # ---------------------------------------------------------------------------
+  # JIRA SOFTWARE (Data Center image)
+  # ---------------------------------------------------------------------------
+  jira:
+    <<: *common
+    image: atlassian/jira-software:${JIRA_VERSION:-10.3}
+    container_name: hwdt-jira
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      <<: *common-env
+      ATL_JDBC_URL: jdbc:postgresql://postgres:5432/${JIRA_DB_NAME:-jira_db}
+      ATL_JDBC_USER: ${JIRA_DB_USER:-jira_user}
+      ATL_JDBC_PASSWORD: ${JIRA_DB_PASSWORD}
+      ATL_DB_DRIVER: org.postgresql.Driver
+      ATL_DB_TYPE: postgres72
+      ATL_DB_SCHEMA_NAME: public
+      ATL_PROXY_NAME: ${JIRA_HOSTNAME:-jira.local}
+      ATL_PROXY_PORT: ${PUBLIC_HTTP_PORT:-80}
+      ATL_TOMCAT_SCHEME: ${PUBLIC_SCHEME:-http}
+      ATL_TOMCAT_SECURE: ${PUBLIC_SECURE:-false}
+      JVM_MINIMUM_MEMORY: ${JIRA_JVM_MIN:-1024m}
+      JVM_MAXIMUM_MEMORY: ${JIRA_JVM_MAX:-2048m}
+      JVM_SUPPORT_RECOMMENDED_ARGS: "-Duser.timezone=${TZ:-UTC}"
+    volumes:
+      - jira_data:/var/atlassian/application-data/jira
+      - ./jira/configuration:/opt/hwdt/jira-configuration:ro
+    expose:
+      - "8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/status | grep -Eq 'RUNNING|FIRST_RUN' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 300s
+
+  # ---------------------------------------------------------------------------
+  # CONFLUENCE (Data Center image)
+  # ---------------------------------------------------------------------------
+  confluence:
+    <<: *common
+    image: atlassian/confluence:${CONFLUENCE_VERSION:-9.2}
+    container_name: hwdt-confluence
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      <<: *common-env
+      ATL_JDBC_URL: jdbc:postgresql://postgres:5432/${CONFLUENCE_DB_NAME:-confluence_db}
+      ATL_JDBC_USER: ${CONFLUENCE_DB_USER:-confluence_user}
+      ATL_JDBC_PASSWORD: ${CONFLUENCE_DB_PASSWORD}
+      ATL_DB_TYPE: postgresql
+      ATL_LICENSE_KEY: ${CONFLUENCE_LICENSE_KEY:-}
+      ATL_PROXY_NAME: ${CONFLUENCE_HOSTNAME:-confluence.local}
+      ATL_PROXY_PORT: ${PUBLIC_HTTP_PORT:-80}
+      ATL_TOMCAT_SCHEME: ${PUBLIC_SCHEME:-http}
+      ATL_TOMCAT_SECURE: ${PUBLIC_SECURE:-false}
+      JVM_MINIMUM_MEMORY: ${CONFLUENCE_JVM_MIN:-1024m}
+      JVM_MAXIMUM_MEMORY: ${CONFLUENCE_JVM_MAX:-2048m}
+    volumes:
+      - confluence_data:/var/atlassian/application-data/confluence
+      - ./confluence/configuration:/opt/hwdt/confluence-configuration:ro
+    expose:
+      - "8090"
+      - "8091"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8090/status | grep -Eq 'RUNNING|FIRST_RUN' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 300s
+
+  # ---------------------------------------------------------------------------
+  # NGINX REVERSE PROXY — jira.local / confluence.local / monitoring.local
+  # ---------------------------------------------------------------------------
+  nginx:
+    <<: *common
+    image: nginx:${NGINX_VERSION:-1.27}-alpine
+    container_name: hwdt-nginx
+    depends_on:
+      - jira
+      - confluence
+      - prometheus
+      - frontend
+      - backend
+    networks:
+      - hwdt_frontend
+      - hwdt_backend
+    ports:
+      - "${NGINX_HTTP_PORT:-80}:80"
+      - "${NGINX_HTTPS_PORT:-443}:443"
+    volumes:
+      - ./nginx/config/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/config/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/config/snippets:/etc/nginx/snippets:ro
+      - ./nginx/config/ssl:/etc/nginx/ssl:ro
+      - nginx_logs:/var/log/nginx
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/nginx-health | grep -q OK || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ---------------------------------------------------------------------------
+  # BACKUP SERVICE — scheduled pg_dump of jira_db + confluence_db
+  # ---------------------------------------------------------------------------
+  backup:
+    <<: *common
+    image: postgres:${POSTGRES_VERSION:-15}-bookworm
+    container_name: hwdt-backup
+    depends_on:
+      postgres:
+        condition: service_healthy
+    entrypoint: ["/bin/bash", "/opt/hwdt/scripts/backup_scheduler.sh"]
+    environment:
+      <<: *common-env
+      BACKUP_MODE: direct
+      PGHOST: postgres
+      PGPORT: "5432"
+      PGUSER: ${POSTGRES_SUPERUSER}
+      PGPASSWORD: ${POSTGRES_SUPERUSER_PASSWORD}
+      BACKUP_DIR: /backups
+      BACKUP_DATABASES: "${JIRA_DB_NAME:-jira_db} ${CONFLUENCE_DB_NAME:-confluence_db} ${HWDT_DB_NAME:-hwdt_db}"
+      BACKUP_INTERVAL_SECONDS: ${BACKUP_INTERVAL_SECONDS:-86400}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-7}
+    volumes:
+      - ./scripts:/opt/hwdt/scripts:ro
+      - ./postgres/backups:/backups
+    healthcheck:
+      test: ["CMD-SHELL", "test -f /backups/.last_success && test $$(( $$(date +%s) - $$(cat /backups/.last_success) )) -lt $$(( $${BACKUP_INTERVAL_SECONDS} * 2 ))"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+
+  # ---------------------------------------------------------------------------
+  # MONITORING SERVICE — Prometheus + cAdvisor (containers) + node-exporter (host)
+  # ---------------------------------------------------------------------------
+  prometheus:
+    <<: *common
+    image: prom/prometheus:${PROMETHEUS_VERSION:-v2.54.1}
+    container_name: hwdt-prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=${PROMETHEUS_RETENTION:-15d}
+      - --web.enable-lifecycle
+      - --web.external-url=http://${MONITORING_HOSTNAME:-monitoring.local}/
+    volumes:
+      - ./monitoring/prometheus:/etc/prometheus:ro
+      - prometheus_data:/prometheus
+    expose:
+      - "9090"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:9090/-/healthy | grep -q Healthy || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  cadvisor:
+    <<: *common
+    image: gcr.io/cadvisor/cadvisor:${CADVISOR_VERSION:-v0.49.1}
+    container_name: hwdt-cadvisor
+    privileged: true
+    devices:
+      - /dev/kmsg
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    expose:
+      - "8080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/healthz | grep -q ok || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  node-exporter:
+    <<: *common
+    image: prom/node-exporter:${NODE_EXPORTER_VERSION:-v1.8.2}
+    container_name: hwdt-node-exporter
+    command:
+      - --path.procfs=/host/proc
+      - --path.sysfs=/host/sys
+      - --path.rootfs=/rootfs
+      - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    expose:
+      - "9100"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:9100/metrics | grep -q node_exporter_build_info || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ---------------------------------------------------------------------------
+  # PHASE 1: BACKEND API (Node.js + Express + TypeScript), HWDT-17
+  # Runs database migrations on start, then serves /api/v1 on :4000
+  # ---------------------------------------------------------------------------
+  backend:
+    <<: *common
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    image: hwdt/backend:${HWDT_VERSION:-1.0.0}
+    container_name: hwdt-backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      <<: *common-env
+      NODE_ENV: production
+      HWDT_DATABASE_URL: postgresql://${HWDT_DB_USER:-hwdt_app}:${HWDT_DB_PASSWORD}@postgres:5432/${HWDT_DB_NAME:-hwdt_db}
+      HWDT_BACKEND_PORT: "4000"
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      HWDT_REQUIRE_JWT_SECRET: "true"
+      JWT_EXPIRES_IN_SECONDS: ${JWT_EXPIRES_IN_SECONDS:-3600}
+      HWDT_SEED_DEMO: ${HWDT_SEED_DEMO:-true}
+      HWDT_SEED_PASSWORD: ${HWDT_SEED_PASSWORD:-}
+      HWDT_ADMIN_EMAIL: ${HWDT_ADMIN_EMAIL:-}
+      HWDT_ADMIN_PASSWORD: ${HWDT_ADMIN_PASSWORD:-}
+      CORS_ORIGINS: http://${HWDT_HOSTNAME:-hwdt.local}
+    expose:
+      - "4000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:4000/api/v1/health | grep -q '\"status\":\"ok\"' || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # ---------------------------------------------------------------------------
+  # PHASE 1: FRONTEND (React + TypeScript on Next.js), HWDT-17
+  # ---------------------------------------------------------------------------
+  frontend:
+    <<: *common
+    build:
+      context: ./frontend
+    image: hwdt/frontend:${HWDT_VERSION:-1.0.0}
+    container_name: hwdt-frontend
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      <<: *common-env
+      HWDT_BACKEND_URL: http://backend:4000
+    expose:
+      - "3000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/login >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  # ---------------------------------------------------------------------------
+  # PROVISIONER (on-demand) — Jira project/issue types/fields/epics + Confluence space/pages
+  #   docker compose --profile provision run --rm provisioner
+  # ---------------------------------------------------------------------------
+  provisioner:
+    image: python:3.12-alpine
+    container_name: hwdt-provisioner
+    profiles: ["provision"]
+    restart: "no"
+    networks:
+      - hwdt_backend
+    depends_on:
+      jira:
+        condition: service_healthy
+      confluence:
+        condition: service_healthy
+    working_dir: /opt/hwdt
+    entrypoint: ["python3", "/opt/hwdt/scripts/provision/provision_all.py"]
+    environment:
+      TZ: ${TZ:-UTC}
+      JIRA_BASE_URL: http://jira:8080
+      JIRA_ADMIN_USER: ${JIRA_ADMIN_USER:-admin}
+      JIRA_ADMIN_PASSWORD: ${JIRA_ADMIN_PASSWORD:-}
+      CONFLUENCE_BASE_URL: http://confluence:8090
+      CONFLUENCE_ADMIN_USER: ${CONFLUENCE_ADMIN_USER:-admin}
+      CONFLUENCE_ADMIN_PASSWORD: ${CONFLUENCE_ADMIN_PASSWORD:-}
+    volumes:
+      - ./scripts:/opt/hwdt/scripts:ro
+      - ./jira/configuration:/opt/hwdt/jira/configuration:ro
+      - ./confluence/configuration:/opt/hwdt/confluence/configuration:ro
+      - ./docs:/opt/hwdt/docs:ro
+
+networks:
+  hwdt_frontend:
+    name: hwdt_frontend
+    driver: bridge
+  hwdt_backend:
+    name: hwdt_backend
+    driver: bridge
+    internal: false
+
+volumes:
+  postgres_data:
+    name: hwdt_postgres_data
+  jira_data:
+    name: hwdt_jira_data
+  confluence_data:
+    name: hwdt_confluence_data
+  prometheus_data:
+    name: hwdt_prometheus_data
+  nginx_logs:
+    name: hwdt_nginx_logs

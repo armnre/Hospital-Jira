@@ -1,0 +1,120 @@
+{
+  "$comment": "HWDT Confluence configuration-as-code. Page bodies come from docs/*.md and are converted to Confluence storage format by scripts/provision/provision_confluence.py.",
+  "space": {
+    "key": "HWDT",
+    "name": "Hospital Workforce Digital Twin Documentation",
+    "description": "Official technical documentation of the Hospital Workforce Digital Twin Platform.",
+    "permissions": {
+      "hwdt-admins": [
+        "administer",
+        "read",
+        "create/page",
+        "remove/page",
+        "export"
+      ],
+      "hwdt-developers": [
+        "read",
+        "create/page",
+        "create/comment",
+        "create/attachment"
+      ],
+      "hwdt-qa": [
+        "read",
+        "create/page",
+        "create/comment"
+      ],
+      "hwdt-analysts": [
+        "read",
+        "create/page",
+        "create/comment"
+      ],
+      "hwdt-viewers": [
+        "read",
+        "create/comment"
+      ]
+    }
+  },
+  "labels": [
+    "hwdt",
+    "phase-0",
+    "phase-1",
+    "phase-2"
+  ],
+  "pages": [
+    {
+      "order": 1,
+      "title": "System Architecture",
+      "source": "docs/01-system-architecture.md"
+    },
+    {
+      "order": 2,
+      "title": "Technical Decisions",
+      "source": "docs/02-technical-decisions.md"
+    },
+    {
+      "order": 3,
+      "title": "Development Guidelines",
+      "source": "docs/03-development-guidelines.md"
+    },
+    {
+      "order": 4,
+      "title": "Database Design",
+      "source": "docs/04-database-design.md"
+    },
+    {
+      "order": 5,
+      "title": "API Documentation",
+      "source": "docs/05-api-documentation.md"
+    },
+    {
+      "order": 6,
+      "title": "Deployment Guide",
+      "source": "docs/06-deployment-guide.md"
+    },
+    {
+      "order": 7,
+      "title": "Security Guidelines",
+      "source": "docs/07-security-guidelines.md"
+    },
+    {
+      "order": 8,
+      "title": "Backup Strategy",
+      "source": "docs/08-backup-strategy.md"
+    },
+    {
+      "order": 9,
+      "title": "Phase 1 Architecture",
+      "source": "docs/09-phase1-architecture.md"
+    },
+    {
+      "order": 10,
+      "title": "Phase 1 Database Documentation",
+      "source": "docs/10-phase1-database.md"
+    },
+    {
+      "order": 11,
+      "title": "Phase 1 API Documentation",
+      "source": "docs/11-phase1-api.md"
+    },
+    {
+      "order": 12,
+      "title": "Phase 1 Business Rules",
+      "source": "docs/12-phase1-business-rules.md"
+    },
+    {
+      "order": 13,
+      "title": "Phase 2 Architecture",
+      "source": "docs/13-phase2-architecture.md"
+    },
+    {
+      "order": 14,
+      "title": "Persian Localization Guide",
+      "source": "docs/14-persian-localization-guide.md"
+    },
+    {
+      "order": 15,
+      "title": "Phase 3 AI Preparation",
+      "source": "docs/15-phase3-ai-matching-preparation.md"
+    }
+  ]
+}

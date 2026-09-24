@@ -1,0 +1,27 @@
+# --- Secrets -------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+*.p12
+nginx/config/ssl/*
+!nginx/config/ssl/README.md
+
+# --- Runtime data / backups ---------------------------------------------
+postgres/backups/*
+!postgres/backups/.gitkeep
+*.dump
+*.dump.sha256
+*.sql.gz
+logs/
+*.log
+
+# --- OS / editor ------------------------------------------------------------
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+__pycache__/
+*.pyc

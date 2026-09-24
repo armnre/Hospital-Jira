@@ -1,0 +1,85 @@
+{
+  "$comment": "HWDT Phase 2 backlog-as-code: Shift Management + Workforce Assignment Workflow. Applied by scripts/provision/provision_jira_phase2.py. Mapped to EPIC-004.",
+  "phase": "Phase 2: Shift Management + Workforce Assignment Workflow (Persian-First RTL)",
+  "release": "R2.0-Shifts",
+  "sprint": "HWDT Sprint 2",
+  "epics": [
+    { "ref": "EPIC-004", "key": "HWDT-4", "name": "Shift Management", "nameFa": "مدیریت شیفت‌های بیمارستانی" }
+  ],
+  "items": [
+    {
+      "key": "HWDT-201", "ref": "P2-STORY-01", "type": "Story", "epic": "EPIC-004", "module": "Shift Management", "points": 5, "status": "DONE",
+      "summary": "Shift Template Management",
+      "description": "As a hospital nursing manager or supervisor, I can define standard shift templates for hospital departments (Morning, Afternoon, Night, On Call, Emergency) with required staff count, roles, and skills.",
+      "acceptanceCriteria": [
+        "Database table shift.shift_templates created with start_time, end_time, required_staff_count, required_role, required_skill",
+        "Standard templates seeded for ICU, Emergency, Surgery, Pediatrics, NICU",
+        "GET /shift-templates and POST /shift-templates APIs",
+        "Shift templates integrated with UI for fast one-click shift creation"
+      ],
+      "deliverables": ["database/migrations/006_shift_management.sql", "backend/src/modules/shifts/shift.repository.ts"]
+    },
+    {
+      "key": "HWDT-202", "ref": "P2-STORY-02", "type": "Story", "epic": "EPIC-004", "module": "Shift Management", "points": 8, "status": "DONE",
+      "summary": "Shift Instance Creation & Persian Jalali Calendar",
+      "description": "As a supervisor, I can create, edit, view and delete shift instances for specific dates using both Jalali and Gregorian dates, with Persian shift types (صبح، عصر، شب، آنکال، اضطراری).",
+      "acceptanceCriteria": [
+        "Database table shift.shift_instances created with jalali_date, gregorian_date, status, required_staff",
+        "POST /shifts, GET /shifts, GET /shifts/{id}, PUT /shifts/{id}, DELETE /shifts/{id} APIs",
+        "Shift calendar view in frontend supporting Daily, Weekly, and Monthly views with Jalali calendar and Persian weekdays (شنبه تا جمعه)",
+        "Persian digits and Jalali month length accurately computed"
+      ],
+      "deliverables": ["backend/src/modules/shifts/shift.routes.ts", "frontend/src/modules/schedule/ScheduleCalendar.tsx", "frontend/src/modules/shift/ShiftModal.tsx"]
+    },
+    {
+      "key": "HWDT-203", "ref": "P2-STORY-03", "type": "Story", "epic": "EPIC-004", "module": "Shift Management", "points": 5, "status": "DONE",
+      "summary": "Employee Availability & Leave Management",
+      "description": "As hospital staff or supervisor, I can record availability, vacations, medical leaves, and training days with Persian reasons and Jalali dates.",
+      "acceptanceCriteria": [
+        "Database table shift.employee_availability created with unique (employee_id, date)",
+        "POST /availability, GET /employees/{id}/availability, GET /availability APIs",
+        "Supports reasons: AVAILABLE, UNAVAILABLE, VACATION, MEDICAL_LEAVE, TRAINING",
+        "Employee self-service availability form in Persian RTL UI"
+      ],
+      "deliverables": ["database/migrations/008_availability.sql", "backend/src/modules/shifts/availability.service.ts", "frontend/src/modules/availability/AvailabilityManager.tsx"]
+    },
+    {
+      "key": "HWDT-204", "ref": "P2-STORY-04", "type": "Story", "epic": "EPIC-004", "module": "Shift Management", "points": 8, "status": "DONE",
+      "summary": "Workforce Assignment Workflow",
+      "description": "As a shift supervisor, I can assign eligible healthcare personnel to shift instances, monitor required vs assigned staff count, and unassign staff if needed.",
+      "acceptanceCriteria": [
+        "Database table shift.shift_assignments created with status PROPOSED, PENDING_CONFIRMATION, CONFIRMED, REJECTED, CANCELLED",
+        "POST /shifts/{id}/assign, GET /shifts/{id}/assignments, DELETE /assignments/{id}",
+        "Automatic trigger updating assigned_staff_count on shift_instances",
+        "Assignment drawer showing requirements, assigned staff, and candidate picker"
+      ],
+      "deliverables": ["database/migrations/007_assignment_workflow.sql", "backend/src/modules/shifts/shift.service.ts", "frontend/src/modules/assignment/AssignmentDrawer.tsx"]
+    },
+    {
+      "key": "HWDT-205", "ref": "P2-STORY-05", "type": "Story", "epic": "EPIC-004", "module": "Shift Management", "points": 8, "status": "DONE",
+      "summary": "Conflict Detection Engine (4 Hard Rules)",
+      "description": "The system automatically detects and prevents assignment conflicts: Rule 1 (expired credential rejection), Rule 2 (time overlap rejection), Rule 3 (unavailability/vacation rejection), and Rule 4 (required skill mismatch rejection).",
+      "acceptanceCriteria": [
+        "POST /shifts/{id}/validate API returning valid boolean and detailed Persian error messages",
+        "Rule 1: Rejects assignment if professional license/credential is expired",
+        "Rule 2: Rejects assignment if employee has overlapping shift on same date",
+        "Rule 3: Rejects assignment if employee is marked as unavailable or on leave",
+        "Rule 4: Rejects assignment if employee lacks the required skill for the shift",
+        "Candidate recommendation ranking prepared for Phase 3 AI Matching Engine"
+      ],
+      "deliverables": ["backend/src/modules/shifts/conflict.engine.ts", "frontend/src/modules/assignment/ConflictBadge.tsx"]
+    },
+    {
+      "key": "HWDT-206", "ref": "P2-STORY-06", "type": "Story", "epic": "EPIC-004", "module": "Shift Management", "points": 8, "status": "DONE",
+      "summary": "Supervisor Hospital Dashboard & Approval Workflow",
+      "description": "As a shift supervisor or nursing manager (metron), I have a dedicated Persian RTL dashboard showing today's shifts, staff shortages, shifts needing approval, department coverage meters, and quick approval actions.",
+      "acceptanceCriteria": [
+        "GET /supervisor/dashboard API calculating department coverage, shortages, and shifts pending approval",
+        "POST /shifts/{id}/approve workflow with audit event SHIFT_APPROVED",
+        "Interactive KPI cards and department coverage progress bars in Persian",
+        "Hospital roles added: HOSPITAL_ADMIN, NURSING_MANAGER, SHIFT_SUPERVISOR, DEPARTMENT_HEAD"
+      ],
+      "deliverables": ["backend/src/modules/shifts/shift.repository.ts", "frontend/src/modules/dashboard/SupervisorDashboard.tsx", "frontend/src/views/SupervisorDashboardView.tsx"]
+    }
+  ]
+}
