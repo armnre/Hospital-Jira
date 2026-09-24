@@ -25,6 +25,13 @@ export function shiftRoutes({ pool }: Deps): Router {
     res.json(await shiftService.getSupervisorDashboard(pool, targetDate));
   });
 
+  // Coverage read model alias for the dashboard module and reporting clients.
+  r.get("/coverage/dashboard", authorize("supervisor:read"), async (req, res) => {
+    const targetDate = typeof req.query.date === "string" ? req.query.date : undefined;
+    const dashboard = await shiftService.getSupervisorDashboard(pool, targetDate);
+    res.json({ date: targetDate, ...dashboard });
+  });
+
   // ---------------------------------------------------------------------------
   // Shift Templates (الگوهای شیفت)
   // ---------------------------------------------------------------------------

@@ -1,2 +1,6 @@
 @import "tailwindcss";
 @source "..";
+
+html { direction: rtl; }
+body { font-family: Tahoma, Arial, sans-serif; }
+input, textarea, select, button { font-family: inherit; }

@@ -60,6 +60,10 @@ export const SHIFT_STATUS_CONFIG = {
     label_fa: "تایید شده",
     color: "bg-emerald-100 text-emerald-800 border-emerald-300 ring-emerald-300",
   },
+  ACTIVE: {
+    label_fa: "فعال",
+    color: "bg-teal-100 text-teal-800 border-teal-300 ring-teal-300",
+  },
   RUNNING: {
     label_fa: "در حال اجرا",
     color: "bg-teal-100 text-teal-800 border-teal-300 ring-teal-300",
@@ -116,6 +120,11 @@ export const AVAILABILITY_REASONS_CONFIG = {
     label_fa: "مرخصی استحقاقی",
     available: false,
     color: "text-amber-800 bg-amber-50 border-amber-200",
+  },
+  SICK_LEAVE: {
+    label_fa: "بیماری",
+    available: false,
+    color: "text-rose-800 bg-rose-50 border-rose-200",
   },
   MEDICAL_LEAVE: {
     label_fa: "مرخصی استعلاجی / پزشکی",

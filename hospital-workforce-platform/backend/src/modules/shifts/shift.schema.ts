@@ -5,13 +5,14 @@ import { gregorianToJalali, jalaliToGregorian } from "../../common/jalali";
 export const SHIFT_TYPES = ["MORNING", "AFTERNOON", "NIGHT", "ON_CALL", "EMERGENCY"] as const;
 export type ShiftType = (typeof SHIFT_TYPES)[number];
 
-export const SHIFT_STATUSES = ["DRAFT", "PENDING_APPROVAL", "APPROVED", "RUNNING", "COMPLETED", "CANCELLED"] as const;
+// RUNNING is retained for existing installations; ACTIVE is the Phase 2 canonical label.
+export const SHIFT_STATUSES = ["DRAFT", "PENDING_APPROVAL", "APPROVED", "ACTIVE", "RUNNING", "COMPLETED", "CANCELLED"] as const;
 export type ShiftStatus = (typeof SHIFT_STATUSES)[number];
 
 export const ASSIGNMENT_STATUSES = ["PROPOSED", "PENDING_CONFIRMATION", "CONFIRMED", "REJECTED", "CANCELLED"] as const;
 export type AssignmentStatus = (typeof ASSIGNMENT_STATUSES)[number];
 
-export const AVAILABILITY_REASONS = ["AVAILABLE", "UNAVAILABLE", "VACATION", "MEDICAL_LEAVE", "TRAINING"] as const;
+export const AVAILABILITY_REASONS = ["AVAILABLE", "UNAVAILABLE", "VACATION", "SICK_LEAVE", "MEDICAL_LEAVE", "TRAINING"] as const;
 export type AvailabilityReason = (typeof AVAILABILITY_REASONS)[number];
 
 const timeFormat = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/, "فرمت زمان نامعتبر است (HH:MM)");

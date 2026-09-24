@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: "HWDT Workforce Twin", description: "
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="fa" dir="rtl">
       <body className="bg-slate-50 text-slate-900 antialiased">
         <WorkforceLayout>{children}</WorkforceLayout>
       </body>

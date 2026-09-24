@@ -7,7 +7,15 @@ import { intParam, parse, text } from "../../common/validate";
 import { authorize, currentUser } from "../auth/rbac";
 
 /** HWDT-11 Department Management · HWDT-12 Skill Management */
-const departmentSchema = z.object({ name: text(2, 100), description: z.string().trim().max(500).default("") }).strict();
+const departmentSchema = z.object({
+  name: text(2, 100),
+  nameFa: z.string().trim().min(2).max(150).optional(),
+  nameEn: z.string().trim().max(150).optional(),
+  code: z.string().trim().max(30).optional(),
+  type: z.string().trim().max(60).default("GENERAL"),
+  active: z.boolean().default(true),
+  description: z.string().trim().max(500).default("")
+}).strict();
 const skillSchema = z.object({ name: text(2, 100), category: text(2, 60) }).strict();
 
 export function referenceRoutes({ pool }: Deps): Router {
@@ -15,20 +23,23 @@ export function referenceRoutes({ pool }: Deps): Router {
 
   // ------------------------------------------------------------- departments
   r.get("/departments", async (_req, res) => {
-    const { rows } = await pool.query<{ id: number; name: string; description: string; headcount: number; clinical_count: number }>(
-      `SELECT d.id, d.name, d.description,
+    const { rows } = await pool.query<{ id: number; name: string; name_fa: string | null; name_en: string | null; code: string | null; type: string; active: boolean; description: string; headcount: number; clinical_count: number }>(
+      `SELECT d.id, d.name, d.name_fa, d.name_en, d.code, d.type, d.active, d.description,
               count(e.id)::int AS headcount,
               count(e.id) FILTER (WHERE e.employee_category = 'CLINICAL')::int AS clinical_count
          FROM workforce.departments d
          LEFT JOIN workforce.employees e ON e.department_id = d.id AND e.deleted_at IS NULL
         GROUP BY d.id ORDER BY d.name`,
     );
-    res.json({ data: rows.map((d) => ({ id: d.id, name: d.name, description: d.description, headcount: d.headcount, clinicalCount: d.clinical_count })) });
+    res.json({ data: rows.map((d) => ({ id: d.id, name: d.name, name_fa: d.name_fa, name_en: d.name_en, code: d.code, type: d.type, active: d.active, description: d.description, headcount: d.headcount, clinicalCount: d.clinical_count })) });
   });
 
   r.post("/departments", authorize("reference:write"), async (req, res) => {
     const body = parse(departmentSchema, req.body);
-    const { rows } = await pool.query("INSERT INTO workforce.departments (name, description) VALUES ($1, $2) RETURNING id, name, description", [body.name, body.description]);
+    const { rows } = await pool.query(
+      "INSERT INTO workforce.departments (name, name_fa, name_en, code, type, active, description) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, name, name_fa, name_en, code, type, active, description",
+      [body.name, body.nameFa ?? body.name, body.nameEn ?? body.name, body.code ?? body.name.slice(0, 8).toUpperCase(), body.type, body.active, body.description],
+    );
     await audit(pool, currentUser(res), "DEPARTMENT_CREATED", "department", rows[0].id, body);
     res.status(201).json(rows[0]);
   });
@@ -36,7 +47,10 @@ export function referenceRoutes({ pool }: Deps): Router {
   r.put("/departments/:id", authorize("reference:write"), async (req, res) => {
     const id = parse(intParam, req.params.id);
     const body = parse(departmentSchema, req.body);
-    const { rows } = await pool.query("UPDATE workforce.departments SET name = $2, description = $3 WHERE id = $1 RETURNING id, name, description", [id, body.name, body.description]);
+    const { rows } = await pool.query(
+      "UPDATE workforce.departments SET name = $2, name_fa = $3, name_en = $4, code = $5, type = $6, active = $7, description = $8 WHERE id = $1 RETURNING id, name, name_fa, name_en, code, type, active, description",
+      [id, body.name, body.nameFa ?? body.name, body.nameEn ?? body.name, body.code ?? body.name.slice(0, 8).toUpperCase(), body.type, body.active, body.description],
+    );
     if (!rows[0]) throw notFound("Department");
     await audit(pool, currentUser(res), "DEPARTMENT_UPDATED", "department", id, body);
     res.json(rows[0]);

@@ -66,19 +66,19 @@ export function ScheduleCalendar() {
 
   const handlePrevMonth = () => {
     if (curJMonth === 1) {
-      setCurJYear((y) => y - 1);
+      setCurJYear((y: number) => y - 1);
       setCurJMonth(12);
     } else {
-      setCurJMonth((m) => m - 1);
+      setCurJMonth((m: number) => m - 1);
     }
   };
 
   const handleNextMonth = () => {
     if (curJMonth === 12) {
-      setCurJYear((y) => y + 1);
+      setCurJYear((y: number) => y + 1);
       setCurJMonth(1);
     } else {
-      setCurJMonth((m) => m + 1);
+      setCurJMonth((m: number) => m + 1);
     }
   };
 
